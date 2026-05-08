@@ -10,6 +10,10 @@ const restaurantPins = [
   { id: "burger", className: "left-[38%] bottom-[16%]" },
 ];
 
+const nearestBathroom = {
+  distance: "35 m",
+};
+
 const MapaInterativo = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -124,6 +128,12 @@ const MapaInterativo = () => {
               >
                 <Toilet size={15} strokeWidth={3} />
               </button>
+
+              {bathroomSelected ? (
+                <div className="absolute left-[18%] bottom-[calc(18%+42px)] -translate-x-1/2 rounded-[10px] bg-white px-3 py-2 text-xs font-semibold text-[#061862] shadow-lg">
+                  {nearestBathroom.distance}
+                </div>
+              ) : null}
             </div>
           </section>
 
@@ -139,8 +149,16 @@ const MapaInterativo = () => {
               }`}
             >
               <Toilet className="h-[clamp(20px,4.3vw,28px)] w-[clamp(20px,4.3vw,28px)] text-neutral-800" strokeWidth={2.6} />
-              <span className="text-[clamp(13px,2.7vw,18px)] font-normal leading-tight">
-                Banheiro
+              <span className="space-y-1">
+                <span className="block text-[clamp(13px,2.7vw,18px)] font-normal leading-tight">
+                  Banheiro
+                </span>
+                {bathroomSelected ? (
+                  <span className="inline-flex items-center gap-1 text-[11px] text-neutral-600">
+                    <MapPin size={11} />
+                    {nearestBathroom.distance}
+                  </span>
+                ) : null}
               </span>
             </button>
 

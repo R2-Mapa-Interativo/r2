@@ -24,7 +24,7 @@ const Lanchonete = () => {
   }, [query]);
 
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className="min-h-screen bg-black text-white"> 
       <div className="mx-auto min-h-screen max-w-[720px] overflow-hidden bg-black">
         <section className="relative min-h-screen overflow-hidden bg-[linear-gradient(180deg,#112D66_0%,#1F5C9A_45%,#0E2A50_72%,#020202_100%)] px-[clamp(20px,5.4vw,39px)] pb-[clamp(30px,7vw,50px)] pt-[clamp(28px,6.4vw,46px)]">
           <div className="pointer-events-none absolute left-[-18%] top-[14%] h-[clamp(118px,27vw,194px)] w-[clamp(290px,70vw,504px)] rotate-[-14deg] rounded-full bg-[#823612]" />
