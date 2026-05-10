@@ -1,0 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Archivo+Black&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 4%;
+    --foreground: 0 0% 100%;
+
+    --card: 240 2% 11%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 240 2% 11%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 4%;
+
+    --secondary: 240 2% 11%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 240 2% 11%;
+    --muted-foreground: 240 2% 58%;
+
+    --accent: 240 2% 15%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 2% 15%;
+    --input: 240 2% 11%;
+    --ring: 0 0% 100%;
+
+    --radius: 1rem;
+
+    --surface: 240 2% 11%;
+    --surface-foreground: 0 0% 100%;
+  }
+
+  .dark {
+    --background: 0 0% 4%;
+    --foreground: 0 0% 100%;
+    --card: 240 2% 11%;
+    --card-foreground: 0 0% 100%;
+    --popover: 240 2% 11%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 4%;
+    --secondary: 240 2% 11%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 240 2% 11%;
+    --muted-foreground: 240 2% 58%;
+    --accent: 240 2% 15%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 2% 15%;
+    --input: 240 2% 11%;
+    --ring: 0 0% 100%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html, body, #root {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, sans-serif;
+    min-height: 100%;
+  }
+
+  .font-display {
+    font-family: 'Archivo Black', 'Inter', sans-serif;
+    letter-spacing: 0;
+  }
+}
