@@ -1,14 +1,11 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Clock, LocateFixed, MapPin, Navigation, Search, Store, Toilet } from "lucide-react";
-import { restaurants } from "@/data/restaurants";
-
-const restaurantPins = [
-  { id: "boteco", className: "right-[22%] top-[38%]" },
-  { id: "pizzaria", className: "left-[23%] top-[26%]" },
-  { id: "acai", className: "right-[18%] bottom-[24%]" },
-  { id: "burger", className: "left-[38%] bottom-[16%]" },
-];
+import { restaurants } from "@/infrastructure/mocs/restaurantsData";
+import { mapEdges, mapNodes } from "@/infrastructure/mocs/mapGraphData";
+import { calculateDijkstra } from "@/domain/usecases/calculateRoute";
+import { GraphNode } from "@/domain/models/types";
+import plantaImg from "@/assets/planta-na-praia.png";
 
 const nearestBathroom = {
   distance: "35 m",
@@ -18,13 +15,42 @@ const MapaInterativo = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialRestaurantId = searchParams.get("restaurant");
-  const initialRestaurant = restaurants.some((restaurant) => restaurant.id === initialRestaurantId)
-    ? initialRestaurantId
-    : null;
-  const [bathroomSelected, setBathroomSelected] = useState(false);
-  const [selectedRestaurantId, setSelectedRestaurantId] = useState<string | null>(initialRestaurant);
+  
+  const validInitial = restaurants.some((restaurant) => restaurant.id === initialRestaurantId);
+  const startTarget = validInitial ? initialRestaurantId : null;
 
-  const selectedRestaurant = restaurants.find((restaurant) => restaurant.id === selectedRestaurantId);
+  const [bathroomSelected, setBathroomSelected] = useState(false);
+  const [selectedRestaurantId, setSelectedRestaurantId] = useState<string | null>(startTarget);
+  const [route, setRoute] = useState<GraphNode[]>([]);
+
+  const selectedRestaurant = useMemo(() => {
+    return restaurants.find((restaurant) => restaurant.id === selectedRestaurantId) || null;
+  }, [selectedRestaurantId]);
+
+  useEffect(() => {
+    const isReadyForRestaurant = !bathroomSelected && selectedRestaurantId;
+    isReadyForRestaurant && setRoute(calculateDijkstra(mapNodes, mapEdges, "current", selectedRestaurantId));
+
+    bathroomSelected && setRoute(calculateDijkstra(mapNodes, mapEdges, "current", "banheiro"));
+    
+    const isEmpty = !bathroomSelected && !selectedRestaurantId;
+    isEmpty && setRoute([]);
+  }, [selectedRestaurantId, bathroomSelected]);
+
+  const getNodeStyle = (id: string) => {
+    const node = mapNodes.find(n => n.id === id);
+    return node ? { left: `${node.x}%`, top: `${node.y}%`, transform: 'translate(-50%, -50%)' } : { display: 'none' };
+  };
+
+  const handleMapClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    
+    const logString = `{ id: "novo_ponto", x: ${x.toFixed(1)}, y: ${y.toFixed(1)} }`;
+    console.log(logString);
+    alert(`Coordenada gerada no console!\nX: ${x.toFixed(1)}% | Y: ${y.toFixed(1)}%`);
+  };
 
   return (
     <main className="min-h-screen bg-black text-white">
@@ -56,8 +82,12 @@ const MapaInterativo = () => {
               </button>
               <button
                 type="button"
+                onClick={() => {
+                  setBathroomSelected(false);
+                  setSelectedRestaurantId(null);
+                }}
                 aria-label="Minha localização"
-                className="flex h-[clamp(36px,7.6vw,55px)] w-[clamp(58px,12.2vw,88px)] items-center justify-center rounded-[18px] bg-white/20 text-white backdrop-blur"
+                className="flex h-[clamp(36px,7.6vw,55px)] w-[clamp(58px,12.2vw,88px)] items-center justify-center rounded-[18px] bg-white/20 text-white backdrop-blur transition-colors hover:bg-white/30"
               >
                 <LocateFixed size={18} strokeWidth={3} />
               </button>
@@ -81,59 +111,93 @@ const MapaInterativo = () => {
           </section>
 
           <section className="relative z-10 mt-7 overflow-hidden rounded-[18px] bg-[#F8F8F8] p-3 text-neutral-950 shadow-2xl" aria-label="Mapa do evento">
-            <div className="relative h-[clamp(420px,92vw,662px)] overflow-hidden rounded-[14px] bg-[#d8d1c3]">
-              <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(39,103,161,0.2),transparent_34%),linear-gradient(25deg,#bfc6a4_0_22%,#e8dfcf_22%_35%,#8ab0c8_35%_48%,#d7c0d4_48%_62%,#b9c780_62%_78%,#f0eadf_78%_100%)]" />
-              <div className="absolute left-[8%] top-[14%] h-[18%] w-[44%] rotate-[-14deg] rounded-[999px] bg-[#061862]/90" />
-              <div className="absolute right-[8%] top-[12%] h-[28%] w-[28%] rounded-full bg-[#823612]/90" />
-              <div className="absolute left-[13%] top-[46%] h-[18%] w-[22%] rounded-full bg-white/90" />
-              <div className="absolute left-[34%] top-[47%] h-[16%] w-[54%] bg-[#db98c5]/95" />
-              <div className="absolute bottom-[16%] left-[30%] h-[8%] w-[34%] rounded-[6px] bg-black/65" />
+            <div 
+              className="relative w-full overflow-hidden rounded-[14px] bg-white cursor-crosshair"
+              style={{ aspectRatio: '4/3' }}
+              onClick={handleMapClick}
+            >
+              <img 
+                src={plantaImg} 
+                alt="Planta do Na Praia" 
+                className="absolute inset-0 h-full w-full object-fill opacity-90"
+              />
 
-              <div className="absolute left-[48%] top-[58%] flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[#f4f36f] text-[#061862] shadow-lg ring-4 ring-white/80">
-                <Navigation size={17} strokeWidth={3} />
+              <svg className="absolute inset-0 z-10 pointer-events-none h-full w-full">
+                {route.map((node, i) => {
+                  const isLast = i === route.length - 1;
+                  if (isLast) return null;
+                  const next = route[i + 1];
+                  return (
+                    <line
+                      key={`${node.id}-${next.id}`}
+                      x1={`${node.x}%`}
+                      y1={`${node.y}%`}
+                      x2={`${next.x}%`}
+                      y2={`${next.y}%`}
+                      stroke="#059669"
+                      strokeWidth="5"
+                      strokeDasharray="8 6"
+                      strokeLinecap="round"
+                      className="animate-pulse"
+                    />
+                  );
+                })}
+              </svg>
+
+              <div 
+                className="absolute z-20 flex h-10 w-10 items-center justify-center rounded-full bg-[#f4f36f] text-[#061862] shadow-lg ring-4 ring-white/80 transition-all duration-300"
+                style={getNodeStyle('current')}
+              >
+                <Navigation size={18} strokeWidth={3} />
               </div>
 
-              {restaurantPins.map((pin) => {
-                const restaurant = restaurants.find((item) => item.id === pin.id) ?? restaurants[0];
+              {restaurants.map((restaurant) => {
                 const active = restaurant.id === selectedRestaurant?.id;
-
+                
                 return (
                   <button
                     key={restaurant.id}
                     type="button"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       setSelectedRestaurantId(restaurant.id);
                       setBathroomSelected(false);
                     }}
                     aria-label={`Selecionar ${restaurant.name}`}
-                    className={`absolute ${pin.className} flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#823612] shadow-lg transition-transform hover:scale-105 ${
-                      active ? "ring-4 ring-[#f4f36f]" : ""
+                    className={`absolute z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#823612] shadow-lg transition-transform hover:scale-105 ${
+                      active ? "ring-4 ring-[#f4f36f] scale-110" : ""
                     }`}
+                    style={getNodeStyle(restaurant.id)}
                   >
-                    <Store size={15} strokeWidth={3} />
+                    <Store size={16} strokeWidth={3} />
                   </button>
                 );
               })}
 
               <button
                 type="button"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   setBathroomSelected(true);
                   setSelectedRestaurantId(null);
                 }}
                 aria-label="Selecionar banheiro mais próximo"
-                className={`absolute left-[18%] bottom-[18%] flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#061862] shadow-lg transition-transform hover:scale-105 ${
-                  bathroomSelected ? "ring-4 ring-[#f4f36f]" : ""
+                className={`absolute z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#061862] shadow-lg transition-transform hover:scale-105 ${
+                  bathroomSelected ? "ring-4 ring-[#f4f36f] scale-110" : ""
                 }`}
+                style={getNodeStyle('banheiro')}
               >
-                <Toilet size={15} strokeWidth={3} />
+                <Toilet size={16} strokeWidth={3} />
               </button>
 
-              {bathroomSelected ? (
-                <div className="absolute left-[18%] bottom-[calc(18%+42px)] -translate-x-1/2 rounded-[10px] bg-white px-3 py-2 text-xs font-semibold text-[#061862] shadow-lg">
+              {bathroomSelected && (
+                <div 
+                  className="absolute z-30 rounded-[10px] bg-white px-3 py-2 text-xs font-black text-[#061862] shadow-lg"
+                  style={{ ...getNodeStyle('banheiro'), marginTop: '-42px' }}
+                >
                   {nearestBathroom.distance}
                 </div>
-              ) : null}
+              )}
             </div>
           </section>
 
@@ -150,15 +214,15 @@ const MapaInterativo = () => {
             >
               <Toilet className="h-[clamp(20px,4.3vw,28px)] w-[clamp(20px,4.3vw,28px)] text-neutral-800" strokeWidth={2.6} />
               <span className="space-y-1">
-                <span className="block text-[clamp(13px,2.7vw,18px)] font-normal leading-tight">
+                <span className="block text-[clamp(13px,2.7vw,18px)] font-black leading-tight">
                   Banheiro
                 </span>
-                {bathroomSelected ? (
-                  <span className="inline-flex items-center gap-1 text-[11px] text-neutral-600">
+                {bathroomSelected && (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-neutral-600">
                     <MapPin size={11} />
                     {nearestBathroom.distance}
                   </span>
-                ) : null}
+                )}
               </span>
             </button>
 
@@ -169,10 +233,10 @@ const MapaInterativo = () => {
               >
                 <Store className="h-[clamp(20px,4.3vw,28px)] w-[clamp(20px,4.3vw,28px)] text-neutral-800" strokeWidth={2.6} />
                 <span className="space-y-1">
-                  <span className="block text-[clamp(13px,2.7vw,18px)] font-normal leading-tight">
+                  <span className="block text-[clamp(13px,2.7vw,18px)] font-black leading-tight">
                     {selectedRestaurant.name}
                   </span>
-                  <span className="flex flex-wrap gap-2 text-[11px] text-neutral-600">
+                  <span className="flex flex-wrap gap-2 text-[11px] font-bold text-neutral-600">
                     <span className="inline-flex items-center gap-1">
                       <Clock size={11} />
                       {selectedRestaurant.wait} min
@@ -191,7 +255,7 @@ const MapaInterativo = () => {
                 className="flex h-[clamp(92px,18vw,130px)] flex-col justify-between rounded-[12px] bg-[#F8F8F8] p-[clamp(15px,3vw,22px)] text-left text-neutral-950 opacity-60 shadow-lg"
               >
                 <Store className="h-[clamp(20px,4.3vw,28px)] w-[clamp(20px,4.3vw,28px)] text-neutral-800" strokeWidth={2.6} />
-                <span className="text-[clamp(13px,2.7vw,18px)] font-normal leading-tight">
+                <span className="text-[clamp(13px,2.7vw,18px)] font-black leading-tight">
                   Restaurante
                 </span>
               </button>
