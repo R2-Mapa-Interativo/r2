@@ -1,10 +1,9 @@
 import { Minus, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { MenuItem } from "@/domain/models/types";
 
 interface ProductModalProps {
-  item: MenuItem | null;
+  item: any | null;
   isOpen: boolean;
   onClose: () => void;
   quantity: number;
@@ -18,6 +17,8 @@ export const ProductModal = ({ item, isOpen, onClose, quantity, setQuantity, onA
     return null;
   }
 
+  const formatPrice = (value: number) => `R$ ${Number(value).toFixed(2).replace('.', ',')}`;
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="w-[90vw] max-w-[420px] overflow-hidden rounded-[24px] border-none bg-[#F8F8F8] p-0 text-neutral-950 shadow-2xl sm:rounded-[24px]">
@@ -30,15 +31,15 @@ export const ProductModal = ({ item, isOpen, onClose, quantity, setQuantity, onA
             type="button"
             onClick={onClose}
             className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white shadow-lg backdrop-blur-md transition-colors hover:bg-black/70"
-            aria-label="Fechar"
+            aria-label="Close"
           >
             <X size={18} strokeWidth={3} />
           </button>
           
-          {item.imageUrl && (
-            <img src={item.imageUrl} alt={item.name} className="h-full w-full rounded-t-[24px] object-cover" />
+          {item.image_url && (
+            <img src={item.image_url} alt={item.name} className="h-full w-full rounded-t-[24px] object-cover" />
           )}
-          {!item.imageUrl && (
+          {!item.image_url && (
             <div className={`h-full w-full rounded-t-[24px] bg-gradient-to-br ${restaurantColor}`} />
           )}
         </div>
@@ -58,7 +59,7 @@ export const ProductModal = ({ item, isOpen, onClose, quantity, setQuantity, onA
           <p className="mt-4 text-sm font-medium leading-relaxed text-neutral-600">{item.description}</p>
           
           <div className="mt-5 mb-2 inline-flex items-center rounded-xl bg-green-50 px-4 py-2">
-            <p className="text-3xl font-black text-[#059669]">{item.price}</p>
+            <p className="text-3xl font-black text-[#059669]">{formatPrice(item.price)}</p>
           </div>
           
           <div className="mt-6 flex items-center justify-between gap-4 border-t border-neutral-200 pt-5">
@@ -84,7 +85,7 @@ export const ProductModal = ({ item, isOpen, onClose, quantity, setQuantity, onA
               onClick={onAdd} 
               className="h-14 flex-1 rounded-[14px] bg-neutral-950 text-[15px] font-bold tracking-wide text-white shadow-lg transition-transform hover:scale-[1.02] hover:bg-neutral-800"
             >
-              Adicionar
+              Adicionar ao Carrinho
             </Button>
           </div>
         </div>

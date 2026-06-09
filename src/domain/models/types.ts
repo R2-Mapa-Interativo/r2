@@ -56,8 +56,8 @@ export interface Order {
 
 export interface GraphNode {
   id: string;
-  x: number;
-  y: number;
+  lat: number;
+  lng: number;
 }
 
 export interface GraphEdge {

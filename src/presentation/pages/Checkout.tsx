@@ -1,74 +1,66 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, CreditCard, Landmark, MapPin, Wallet } from "lucide-react";
-import { CartState, Order } from "@/domain/models/types";
-import { PaymentMethod } from "@/presentation/components/freatures/checkout/PaymentMethod";
-import { CheckoutSummary } from "@/presentation/components/freatures/checkout/CheckoutSummary";
+import { PaymentMethod } from "@/presentation/components/features/checkout/PaymentMethod";
 import { useToast } from "@/hooks/use-toast";
-import { restaurants } from "@/infrastructure/mocs/restaurantsData";
-
-const parsePrice = (priceStr: string) => {
-  const numericStr = priceStr.replace(/[^\d,]/g, '').replace(',', '.');
-  return parseFloat(numericStr) || 0;
-};
+import { useCartStore } from "@/domain/store/useCartStore";
+import { useOrderStore } from "@/domain/store/useOrderStore";
 
 const formatPrice = (value: number) => {
-  return `R$ ${value.toFixed(2).replace('.', ',')}`;
+  return `R$ ${Number(value).toFixed(2).replace('.', ',')}`;
 };
 
 const Checkout = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [paymentSelected, setPaymentSelected] = useState<string>("credit");
-  const [cartState, setCartState] = useState<CartState>({ restaurantId: null, items: [] });
   const [isProcessing, setIsProcessing] = useState(false);
 
-  useEffect(() => {
-    const storedCart = localStorage.getItem("na_praia_cart");
-    if (storedCart) {
-      try {
-        setCartState(JSON.parse(storedCart));
-      } catch (error) {
-        console.error("Erro ao carregar carrinho:", error);
-      }
-    }
-  }, []);
+  const { items, establishmentId, clearCart, getTotal } = useCartStore();
+  const { setActiveOrder } = useOrderStore();
+  
+  const cartTotal = getTotal();
 
-  const cartTotal = cartState.items.reduce((acc, item) => {
-    return acc + (parsePrice(item.price) * item.quantity);
-  }, 0);
-
-  const handleCheckout = () => {
+  const handleCheckoutProcess = async () => {
     setIsProcessing(true);
     
-    setTimeout(() => {
-      const restaurant = restaurants.find(r => r.id === cartState.restaurantId);
-      
-      const newOrder: Order = {
-        id: `NP-${Math.floor(1000 + Math.random() * 9000)}`,
-        restaurantName: restaurant?.name || "Restaurante",
-        restaurantColor: restaurant?.color || "from-neutral-800 to-neutral-900",
-        status: "CONFIRMADO",
-        date: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }),
-        time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-        total: cartTotal,
-        items: cartState.items.map(item => ({
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price
-        }))
+    try {
+      const payload = {
+        user_id: 1,
+        establishment_id: establishmentId,
+        items: items.map((i) => ({ product_id: i.productId, quantity: i.quantity }))
       };
 
-      localStorage.setItem("na_praia_active_order", JSON.stringify(newOrder));
-      localStorage.removeItem("na_praia_cart");
+      const response = await fetch("http://localhost/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const isInvalid = !response.ok;
+      if (isInvalid) throw new Error("Payment processing error");
+      
+      const newOrder = await response.json();
+
+      setActiveOrder(newOrder);
+      clearCart();
       
       toast({
         title: "Pedido confirmado!",
         description: "Seu pagamento foi processado com sucesso.",
         variant: "default"
       });
+      
       navigate("/na-praia/lanchonete");
-    }, 1500);
+    } catch (error) {
+      toast({
+        title: "Erro no Pagamento",
+        description: "Não foi possível concluir o pedido. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -84,7 +76,7 @@ const Checkout = () => {
               <button
                 type="button"
                 onClick={() => navigate(-1)}
-                aria-label="Voltar"
+                aria-label="Back"
                 className="flex h-[clamp(36px,7.6vw,55px)] w-[clamp(52px,10.8vw,78px)] items-center justify-center rounded-[18px] bg-white/20 text-white backdrop-blur"
               >
                 <ArrowLeft size={18} strokeWidth={3} />
@@ -101,13 +93,6 @@ const Checkout = () => {
             </div>
 
             <div className="mt-8 space-y-8">
-              <section>
-                <h2 className="mb-4 text-[13px] font-bold uppercase tracking-[0.1em] text-white/70">
-                  Itens do Pedido
-                </h2>
-                <CheckoutSummary items={cartState.items} formatPrice={formatPrice} parsePrice={parsePrice} />
-              </section>
-
               <section>
                 <h2 className="mb-4 text-[13px] font-bold uppercase tracking-[0.1em] text-white/70">
                   Forma de Pagamento
@@ -167,8 +152,8 @@ const Checkout = () => {
           </div>
           <button
             type="button"
-            onClick={handleCheckout}
-            disabled={isProcessing || cartState.items.length === 0}
+            onClick={handleCheckoutProcess}
+            disabled={isProcessing || items.length === 0}
             className="flex h-[60px] w-full items-center justify-center gap-2 rounded-[16px] bg-neutral-950 text-[16px] font-bold tracking-wide text-white shadow-[0_8px_16px_rgba(0,0,0,0.15)] transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_20px_rgba(0,0,0,0.2)] active:translate-y-0 disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
           >
             {isProcessing && <span className="animate-pulse">Processando...</span>}

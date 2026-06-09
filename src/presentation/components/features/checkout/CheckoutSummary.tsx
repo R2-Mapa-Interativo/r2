@@ -1,12 +1,10 @@
-import { CartItem } from "@/domain/models/types";
-
 interface CheckoutSummaryProps {
-  items: CartItem[];
-  formatPrice: (val: number) => string;
-  parsePrice: (val: string) => number;
+  items: any[];
 }
 
-export const CheckoutSummary = ({ items, formatPrice, parsePrice }: CheckoutSummaryProps) => {
+export const CheckoutSummary = ({ items }: CheckoutSummaryProps) => {
+  const formatPrice = (value: number) => `R$ ${Number(value).toFixed(2).replace('.', ',')}`;
+
   return (
     <div className="space-y-3">
       {items.map((item) => (
@@ -23,7 +21,7 @@ export const CheckoutSummary = ({ items, formatPrice, parsePrice }: CheckoutSumm
             </div>
           </div>
           <span className="text-[14px] font-black text-[#059669]">
-            {formatPrice(parsePrice(item.price) * item.quantity)}
+            {formatPrice(Number(item.price) * item.quantity)}
           </span>
         </div>
       ))}
