@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { OrderCard } from "@/presentation/components/features/history/OrderCard";
 import { OrderDetailsModal } from "@/presentation/components/features/history/OrderDetailsModal";
+import { API_URL } from "@/lib/api";
 
 const OrderHistory = () => {
   const navigate = useNavigate();
@@ -16,7 +17,7 @@ const OrderHistory = () => {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const response = await fetch("http://localhost/api/orders/user/1");
+        const response = await fetch(`${API_URL}/api/orders/user/1`);
         const isInvalid = !response.ok;
         if (isInvalid) throw new Error("Failed to load history");
         
