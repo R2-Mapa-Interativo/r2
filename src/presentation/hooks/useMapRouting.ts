@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { GraphNode } from "@/domain/models/types";
+import { API_URL } from "@/lib/api";
 
 export const useMapRouting = () => {
   const [route, setRoute] = useState<GraphNode[]>([]);
@@ -8,10 +9,9 @@ export const useMapRouting = () => {
 
   const fetchRoute = useCallback(async (origin: string, destination: string, bathrooms: any[], onRedirect: (newId: string) => void) => {
     setIsFetchingRoute(true);
-    setRedirectAlert({ show: false, original: "", new: "" });
 
     try {
-      const response = await fetch(`http://localhost/api/map/route?origin_id=${origin}&destination_id=${destination}`);
+      const response = await fetch(`${API_URL}/api/map/route?origin_id=${origin}&destination_id=${destination}`);
       const isInvalid = !response.ok;
 
       if (isInvalid) {

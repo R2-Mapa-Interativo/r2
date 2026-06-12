@@ -9,12 +9,15 @@ const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 interface MapboxDisplayProps {
   isFetchingRoute: boolean;
   isLoadingNodes: boolean;
+  loadError: boolean;
+  onRetry: () => void;
   route: GraphNode[];
   currentNode: any;
   bathrooms: any[];
   restaurants: any[];
   targetBathroomId: string | null;
   selectedRestaurantId: string | null;
+  restaurantImages: Record<string, string>;
   viewState: any;
   onViewStateChange: (evt: any) => void;
   onSelectBathroom: (id: string) => void;
@@ -24,12 +27,15 @@ interface MapboxDisplayProps {
 export const MapboxDisplay = ({
   isFetchingRoute,
   isLoadingNodes,
+  loadError,
+  onRetry,
   route,
   currentNode,
   bathrooms,
   restaurants,
   targetBathroomId,
   selectedRestaurantId,
+  restaurantImages,
   viewState,
   onViewStateChange,
   onSelectBathroom,
@@ -55,6 +61,22 @@ export const MapboxDisplay = ({
               <span className="text-[#f4f36f] font-bold text-xs uppercase tracking-widest animate-pulse">
                 Sincronizando Mapa...
               </span>
+            </div>
+          </div>
+        )}
+
+        {loadError && !isLoadingNodes && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-neutral-900/95 p-6 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <span className="text-sm font-bold text-white">Não foi possível carregar o mapa.</span>
+              <span className="text-xs text-neutral-400">Verifique sua conexão e tente novamente.</span>
+              <button
+                type="button"
+                onClick={onRetry}
+                className="rounded-full bg-[#f4f36f] px-5 py-2 text-xs font-black uppercase tracking-widest text-[#061862] shadow-lg transition-transform hover:scale-105"
+              >
+                Tentar novamente
+              </button>
             </div>
           </div>
         )}
@@ -102,7 +124,8 @@ export const MapboxDisplay = ({
             const active = b.id === targetBathroomId;
             const isFemale = b.id.includes('fem');
             const isMale = b.id.includes('masc');
-            
+            const isFull = b.is_full;
+
             let genderColor = 'text-[#061862]';
             if (isFemale) {
                 genderColor = 'text-pink-600';
@@ -117,6 +140,11 @@ export const MapboxDisplay = ({
                   {active && (
                     <div className="mb-2 rounded-[10px] bg-white px-3 py-2 text-xs font-black text-[#061862] shadow-lg whitespace-nowrap animate-in zoom-in duration-300">
                       {b.name || b.id.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    </div>
+                  )}
+                  {isFull && !active && (
+                    <div className="mb-1 rounded-full bg-red-500 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-white shadow-md">
+                      Cheio
                     </div>
                   )}
                   <button
@@ -139,14 +167,19 @@ export const MapboxDisplay = ({
 
           {!isLoadingNodes && restaurants.map((restaurant) => {
             const active = restaurant.id === selectedRestaurantId;
+            const image = restaurantImages[restaurant.id];
             return (
               <Marker key={restaurant.id} longitude={Number(restaurant.lng)} latitude={Number(restaurant.lat)} anchor="center">
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); onSelectRestaurant(restaurant.id); }}
-                  className={`flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#823612] shadow-lg transition-transform duration-300 hover:scale-105 ${active ? "ring-4 ring-[#f4f36f] scale-110" : ""}`}
+                  className={`flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white text-[#823612] shadow-lg ring-2 ring-white transition-transform duration-300 hover:scale-105 ${active ? "ring-4 ring-[#f4f36f] scale-110" : ""}`}
                 >
-                  <Store size={16} strokeWidth={3} />
+                  {image ? (
+                    <img src={image} alt="" className="h-full w-full object-cover" loading="lazy" />
+                  ) : (
+                    <Store size={16} strokeWidth={3} />
+                  )}
                 </button>
               </Marker>
             );

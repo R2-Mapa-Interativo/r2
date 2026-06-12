@@ -15,10 +15,15 @@ export const useMapEntities = (databaseNodes: any[], targetBathroomId: string | 
         return "banheiro_masc";
     }
 
-    let nearestId = "banheiro_masc";
+    // Botão "Banheiro" deve levar a um banheiro vazio. Considera só os não cheios;
+    // se todos estiverem cheios, cai de volta para a lista completa.
+    const availableBathrooms = bathrooms.filter(node => !node.is_full);
+    const candidates = availableBathrooms.length > 0 ? availableBathrooms : bathrooms;
+
+    let nearestId = candidates[0].id;
     let minDistance = Infinity;
 
-    bathrooms.forEach(node => {
+    candidates.forEach(node => {
       const dist = Math.sqrt(Math.pow(node.lat - currentNode.lat, 2) + Math.pow(node.lng - currentNode.lng, 2));
       const isCloser = dist < minDistance;
 

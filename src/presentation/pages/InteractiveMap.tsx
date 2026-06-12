@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useMapStore } from "@/domain/store/useMapStore";
+import { useCatalogStore } from "@/domain/store/useCatalogStore";
 import { useMapRouting } from "@/presentation/hooks/useMapRouting";
 import { useMapEntities } from "@/domain/entities/useMapEntities";
 import { useMapCamera } from "@/presentation/hooks/useMapCamera";
@@ -15,7 +16,8 @@ const InteractiveMap = () => {
   const [searchParams] = useSearchParams();
   const initialRestaurantId = searchParams.get("restaurant");
 
-  const { nodes: databaseNodes, isLoading: nodesLoading, fetchNodes } = useMapStore();
+  const { nodes: databaseNodes, isLoading: nodesLoading, error: nodesError, fetchNodes } = useMapStore();
+  const { establishments, fetchEstablishments } = useCatalogStore();
 
   const [isBathroomSelected, setIsBathroomSelected] = useState(false);
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string | null>(initialRestaurantId);
@@ -46,6 +48,21 @@ const InteractiveMap = () => {
   }, [fetchNodes]);
 
   useEffect(() => {
+    fetchEstablishments();
+  }, [fetchEstablishments]);
+
+  // Cruza os nós do mapa com os estabelecimentos (por zapt_poi_id) para a mini imagem no ponto.
+  const restaurantImages = useMemo(() => {
+    const map: Record<string, string> = {};
+    establishments.forEach((e: any) => {
+      if (e.zapt_poi_id && e.image_url) {
+        map[e.zapt_poi_id] = e.image_url;
+      }
+    });
+    return map;
+  }, [establishments]);
+
+  useEffect(() => {
     const isInvalidInitial = initialRestaurantId && restaurants.length > 0 && !restaurants.some(r => r.id === initialRestaurantId);
     isInvalidInitial && setSelectedRestaurantId(null);
   }, [initialRestaurantId, restaurants]);
@@ -61,10 +78,13 @@ const InteractiveMap = () => {
     isEmpty && clearRoute();
   }, [selectedRestaurantId, isBathroomSelected, targetBathroomId, bathrooms, fetchRoute, clearRoute]);
 
+  const clearRedirectAlert = () => setRedirectAlert({ show: false, original: "", new: "" });
+
   const handleLocateFixed = () => {
     setIsBathroomSelected(false);
     setSelectedRestaurantId(null);
     setTargetBathroomId(null);
+    clearRedirectAlert();
     resetCamera(-47.850007, -15.818030);
   };
 
@@ -72,12 +92,14 @@ const InteractiveMap = () => {
     setIsBathroomSelected(true);
     setSelectedRestaurantId(null);
     setTargetBathroomId(id);
+    clearRedirectAlert();
   };
 
   const handleSelectRestaurant = (id: string) => {
     setSelectedRestaurantId(id);
     setIsBathroomSelected(false);
     setTargetBathroomId(null);
+    clearRedirectAlert();
   };
 
   return (
@@ -98,12 +120,15 @@ const InteractiveMap = () => {
           <MapboxDisplay
             isFetchingRoute={isFetchingRoute}
             isLoadingNodes={nodesLoading}
+            loadError={nodesError}
+            onRetry={fetchNodes}
             route={route}
             currentNode={currentNode}
             bathrooms={bathrooms}
             restaurants={restaurants}
             targetBathroomId={targetBathroomId}
             selectedRestaurantId={selectedRestaurantId}
+            restaurantImages={restaurantImages}
             viewState={viewState}
             onViewStateChange={handleViewStateChange}
             onSelectBathroom={handleSelectBathroom}
