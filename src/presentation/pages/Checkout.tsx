@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, CreditCard, Landmark, MapPin, Wallet } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Landmark, MapPin, Wallet } from "lucide-react";
 import { PaymentMethod } from "@/presentation/components/features/checkout/PaymentMethod";
 import { useToast } from "@/hooks/use-toast";
 import { useCartStore } from "@/domain/store/useCartStore";
@@ -15,19 +15,19 @@ const formatPrice = (value: number) => {
 // Ajuste os tempos (em ms) aqui se quiser acelerar/atrasar a demonstração.
 const ORDER_NOTIFICATIONS = [
   { delay: 0, title: "Pedido confirmado!", description: "Seu pagamento foi processado com sucesso." },
-  { delay: 4000, title: "Pedido em preparação", description: "A cozinha já começou a preparar o seu pedido." },
-  { delay: 8000, title: "Quase pronto!", description: "Seu pedido ficará pronto em 5 minutos." },
-  { delay: 12000, title: "Pedido pronto!", description: "Já pode retirar o seu pedido no balcão." },
+  { delay: 8000, title: "Pedido em preparação", description: "A cozinha já começou a preparar o seu pedido." },
+  { delay: 16000, title: "Quase pronto!", description: "Seu pedido ficará pronto em 5 minutos." },
+  { delay: 24000, title: "Pedido pronto!", description: "Já pode retirar o seu pedido no balcão." },
 ];
 
 const Checkout = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [paymentSelected, setPaymentSelected] = useState<string>("credit");
+  const [paymentSelected, setPaymentSelected] = useState<string>("pix");
   const [isProcessing, setIsProcessing] = useState(false);
 
   const { items, establishmentId, clearCart, getTotal } = useCartStore();
-  const { setActiveOrder } = useOrderStore();
+  const { setActiveOrder, addNotification } = useOrderStore();
   
   const cartTotal = getTotal();
 
@@ -56,12 +56,17 @@ const Checkout = () => {
       clearCart();
 
       // Dispara a sequência de notificações com os delays definidos em ORDER_NOTIFICATIONS.
+      // Cada uma aparece no pop-up E é gravada na lista do sino, na mesma ordem/tempo.
       ORDER_NOTIFICATIONS.forEach((notification) => {
         setTimeout(() => {
           toast({
             title: notification.title,
             description: notification.description,
             variant: "default"
+          });
+          addNotification({
+            title: notification.title,
+            description: notification.description
           });
         }, notification.delay);
       });
@@ -114,27 +119,19 @@ const Checkout = () => {
                 </h2>
                 <div className="space-y-3">
                   <PaymentMethod
-                    id="credit"
-                    title="Cartão de Crédito"
-                    description="Final 4929"
-                    icon={<CreditCard size={20} strokeWidth={2.5} />}
-                    selected={paymentSelected === "credit"}
-                    onSelect={setPaymentSelected}
-                  />
-                  <PaymentMethod
-                    id="debit"
-                    title="Cartão de Débito"
-                    description="Redireciona para autenticação"
-                    icon={<Wallet size={20} strokeWidth={2.5} />}
-                    selected={paymentSelected === "debit"}
-                    onSelect={setPaymentSelected}
-                  />
-                  <PaymentMethod
                     id="pix"
                     title="PIX"
                     description="Aprovação instantânea"
                     icon={<Landmark size={20} strokeWidth={2.5} />}
                     selected={paymentSelected === "pix"}
+                    onSelect={setPaymentSelected}
+                  />
+                  <PaymentMethod
+                    id="wallet"
+                    title="Saldo na Carteira"
+                    description="Pague com seu saldo disponível"
+                    icon={<Wallet size={20} strokeWidth={2.5} />}
+                    selected={paymentSelected === "wallet"}
                     onSelect={setPaymentSelected}
                   />
                 </div>

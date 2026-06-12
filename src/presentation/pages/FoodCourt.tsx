@@ -37,7 +37,7 @@ const FoodCourt = () => {
   const [activePanel, setActivePanel] = useState<"cart" | "notification" | null>(null);
   
   const { items, getItemCount, getTotal } = useCartStore();
-  const { activeOrder, hasUnreadNotification } = useOrderStore();
+  const { notifications, hasUnreadNotification, markNotificationsRead } = useOrderStore();
   const { establishments, isLoadingEstablishments, fetchEstablishments } = useCatalogStore();
 
   const cartCount = getItemCount();
@@ -93,7 +93,7 @@ const FoodCourt = () => {
               </button>
               <button
                 type="button"
-                onClick={() => setActivePanel("notification")}
+                onClick={() => { markNotificationsRead(); setActivePanel("notification"); }}
                 aria-label="Notifications"
                 className="relative flex h-[clamp(36px,7.6vw,55px)] w-[clamp(46px,9.6vw,70px)] items-center justify-center rounded-[18px] bg-white/20 text-white backdrop-blur transition-colors hover:bg-white/30"
               >
@@ -277,12 +277,27 @@ const FoodCourt = () => {
                 )}
 
                 {activePanel === "notification" && (
-                  <div className="flex-1 p-5 flex flex-col justify-between">
-                    <div className="rounded-[16px] bg-white p-5 text-[15px] font-medium leading-relaxed text-neutral-800 shadow-sm border border-neutral-100">
-                      {activeOrder 
-                        ? getNotificationMessage(activeOrder.status, "Estabelecimento") 
-                        : "Você não possui pedidos ativos no momento."}
-                    </div>
+                  <div className="flex-1 overflow-y-auto p-5">
+                    {notifications.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-10 text-center">
+                        <Bell size={48} className="text-neutral-300 mb-4" strokeWidth={1.5} />
+                        <p className="text-[15px] font-medium text-neutral-500">Você ainda não tem notificações.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {notifications.map((n) => (
+                          <div key={n.id} className="flex gap-3 rounded-[16px] border border-neutral-100 bg-white p-4 shadow-sm">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#059669]/10 text-[#059669]">
+                              <Bell size={16} strokeWidth={2.5} />
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-[14px] font-black leading-tight text-neutral-900">{n.title}</span>
+                              <span className="mt-1 text-[13px] font-medium text-neutral-600">{n.description}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </section>
