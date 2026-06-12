@@ -5,10 +5,20 @@ import { PaymentMethod } from "@/presentation/components/features/checkout/Payme
 import { useToast } from "@/hooks/use-toast";
 import { useCartStore } from "@/domain/store/useCartStore";
 import { useOrderStore } from "@/domain/store/useOrderStore";
+import { API_URL } from "@/lib/api";
 
 const formatPrice = (value: number) => {
   return `R$ ${Number(value).toFixed(2).replace('.', ',')}`;
 };
+
+// Sequência de notificações do pedido, exibidas no front com um delay entre cada.
+// Ajuste os tempos (em ms) aqui se quiser acelerar/atrasar a demonstração.
+const ORDER_NOTIFICATIONS = [
+  { delay: 0, title: "Pedido confirmado!", description: "Seu pagamento foi processado com sucesso." },
+  { delay: 4000, title: "Pedido em preparação", description: "A cozinha já começou a preparar o seu pedido." },
+  { delay: 8000, title: "Quase pronto!", description: "Seu pedido ficará pronto em 5 minutos." },
+  { delay: 12000, title: "Pedido pronto!", description: "Já pode retirar o seu pedido no balcão." },
+];
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -31,7 +41,7 @@ const Checkout = () => {
         items: items.map((i) => ({ product_id: i.productId, quantity: i.quantity }))
       };
 
-      const response = await fetch("http://localhost/api/orders", {
+      const response = await fetch(`${API_URL}/api/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -39,18 +49,23 @@ const Checkout = () => {
 
       const isInvalid = !response.ok;
       if (isInvalid) throw new Error("Payment processing error");
-      
+
       const newOrder = await response.json();
 
       setActiveOrder(newOrder);
       clearCart();
-      
-      toast({
-        title: "Pedido confirmado!",
-        description: "Seu pagamento foi processado com sucesso.",
-        variant: "default"
+
+      // Dispara a sequência de notificações com os delays definidos em ORDER_NOTIFICATIONS.
+      ORDER_NOTIFICATIONS.forEach((notification) => {
+        setTimeout(() => {
+          toast({
+            title: notification.title,
+            description: notification.description,
+            variant: "default"
+          });
+        }, notification.delay);
       });
-      
+
       navigate("/na-praia/lanchonete");
     } catch (error) {
       toast({
