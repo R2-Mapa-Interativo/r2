@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { API_URL } from '@/lib/api';
 
 interface CatalogStore {
   establishments: any[];
@@ -19,17 +20,10 @@ export const useCatalogStore = create<CatalogStore>()(
       loadingCatalogs: {},
 
       fetchEstablishments: async () => {
-        const { establishments } = get();
-        const hasCache = establishments.length > 0;
-        
-        if (hasCache) {
-          return;
-        }
-
         set({ isLoadingEstablishments: true });
-        
+
         try {
-          const response = await fetch("http://localhost/api/establishments");
+          const response = await fetch(`${API_URL}/api/establishments`);
           const isInvalid = !response.ok;
           
           if (isInvalid) {
@@ -44,17 +38,10 @@ export const useCatalogStore = create<CatalogStore>()(
       },
 
       fetchCatalog: async (poiId: string) => {
-        const { catalogs } = get();
-        const hasCache = !!catalogs[poiId];
-        
-        if (hasCache) {
-          return;
-        }
-
         set((state) => ({ loadingCatalogs: { ...state.loadingCatalogs, [poiId]: true } }));
         
         try {
-          const response = await fetch(`http://localhost/api/establishments/${poiId}/catalog`);
+          const response = await fetch(`${API_URL}/api/establishments/${poiId}/catalog`);
           const isInvalid = !response.ok;
           
           if (isInvalid) {
@@ -73,7 +60,7 @@ export const useCatalogStore = create<CatalogStore>()(
       }
     }),
     {
-      name: 'na_praia_catalog'
+      name: 'na_praia_catalog_v2'
     }
   )
 );
